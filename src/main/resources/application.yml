@@ -1,0 +1,12 @@
+spring:
+  output:
+    ansi:
+      enabled: ALWAYS
+
+sap:
+  client:
+    host: https://fiap-reactjs-presencial.herokuapp.com
+
+banck:
+  client:
+    host: https://fiap-reactjs-presencial.herokuapp.com
