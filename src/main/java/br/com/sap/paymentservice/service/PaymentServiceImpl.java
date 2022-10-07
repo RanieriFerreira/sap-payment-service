@@ -2,10 +2,7 @@ package br.com.sap.paymentservice.service;
 
 import br.com.sap.paymentservice.client.BankClient;
 import br.com.sap.paymentservice.client.SapClient;
-import br.com.sap.paymentservice.domain.RequestConfirmPayment;
-import br.com.sap.paymentservice.domain.RequestReceiveBatch;
-import br.com.sap.paymentservice.domain.ResponseReceiveBatch;
-import br.com.sap.paymentservice.domain.ResponseSendBatch;
+import br.com.sap.paymentservice.domain.*;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,30 +26,45 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public ResponseSendBatch getBatch() {
-        LOGGER.info("m=serviceSendBatch");
-        return sapClient.sendBatch();
+        LOGGER.info("m=serviceGetBatch, s=start");
+        ResponseSendBatch sendBatch = sapClient.sendBatch();
+        LOGGER.info("m=serviceGetBatch, s=finish");
+        return sendBatch;
     }
 
     @Override
-    public ResponseReceiveBatch sendBatch() {
-
-        LOGGER.info("m=serviceSendBatch");
-        ResponseSendBatch responseSendBatch = getBatch();
+    public ResponseReceiveBatch sendBatch(ResponseSendBatch responseSendBatch) {
+        LOGGER.info("m=serviceSendBatch, s=start");
         LOGGER.info("responseSendBatch={}", gson.toJson(responseSendBatch));
-
         RequestReceiveBatch requestReceiveBatch = mapperSendBatchToReceiveBatch(responseSendBatch);
         LOGGER.info("requestReceiveBatch={}", gson.toJson(requestReceiveBatch));
 
-        return bankClient.receiveBatch(requestReceiveBatch);
+        ResponseReceiveBatch responseReceiveBatch = bankClient.receiveBatch(requestReceiveBatch);
+        LOGGER.info("responseReceiveBatch={}", gson.toJson(responseReceiveBatch));
+        LOGGER.info("m=serviceSendBatch s=finish");
+
+        return responseReceiveBatch;
     }
 
     @Override
-    public void sendBatchWithPaymentConfirmation() {
-        LOGGER.debug("m=sendBatchWithPaymentConfirmation");
-        ResponseReceiveBatch responseReceiveBatch = sendBatch();
+    public void sendBatchWithPaymentConfirmation(ResponseSendBatch responseSendBatch) {
+        LOGGER.debug("m=sendBatchWithPaymentConfirmation, s=start");
+        ResponseReceiveBatch responseReceiveBatch = sendBatch(responseSendBatch);
         LOGGER.info("responseSendBatch={}", gson.toJson(responseReceiveBatch));
 
         sapClient.confirmPayment(mapperCheckProcessingToConfirmPayment(responseReceiveBatch));
+        LOGGER.debug("m=sendBatchWithPaymentConfirmation, s=finish");
+    }
+
+    @Override
+    public void updatePaymentStatus(RequestCheckProcessing requestCheckProcessing) {
+        LOGGER.debug("m=sendBatchWithPaymentConfirmation, s=start");
+        bankClient.checkPayment(requestCheckProcessing);
+
+        // TODO: Busca dados de pagamento no banco de dados
+        // TODO: Envia confirmação para cliente SAP
+
+        LOGGER.debug("m=sendBatchWithPaymentConfirmation, s=finish");
     }
 
     private RequestReceiveBatch mapperSendBatchToReceiveBatch(ResponseSendBatch responseSendBatch) {
